@@ -60,12 +60,16 @@ async def generate_nft(
     image_bytes = await image.read()
 
     # 2. Start Tripo AI Task
-    tripo_task_id = await create_3d_task(image_bytes)
+    tripo_task_id = await create_3d_task(image_bytes, content_type=image.content_type)
     if not tripo_task_id:
         raise HTTPException(status_code=500, detail="Failed to initiate 3D generation.")
 
-    # 3. Process AI Metadata (Groq) in parallel-ish or sequential
-    ai_metadata = await generate_nft_metadata(style_prompt)
+    # 3. Generate metadata via Groq Vision — passes the actual image
+    ai_metadata = await generate_nft_metadata(
+        style_prompt=style_prompt,
+        image_bytes=image_bytes,
+        content_type=image.content_type,
+    )
 
     # 4. Wait for 3D model (Polling)
     # Note: In a production app, you might use WebSockets or Webhooks.

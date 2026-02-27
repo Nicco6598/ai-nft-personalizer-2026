@@ -62,11 +62,11 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
                 onDrop={onDrop}
                 onClick={() => !preview && inputRef.current?.click()}
                 className={[
-                    "relative flex flex-col items-center justify-center w-full min-h-[220px] transition-all duration-100 cursor-pointer select-none",
+                    "relative flex flex-col items-center justify-center w-full min-h-[180px] rounded-xl transition-all duration-150 cursor-pointer select-none border-2 border-dashed",
                     isDragging
-                        ? "border-2 border-cyan-400 bg-cyan-500/10 scale-[1.01] shadow-[0_0_20px_rgba(20,241,255,0.2)]"
-                        : "border border-cyan-500/30 bg-black hover:border-cyan-400 hover:bg-cyan-500/5",
-                    preview ? "cursor-default" : "",
+                        ? "border-[#b2ff00]/60 bg-[#b2ff00]/5 scale-[1.01]"
+                        : "border-white/10 bg-[#0d1117] hover:border-white/20 hover:bg-white/3",
+                    preview ? "cursor-default border-solid border-white/10" : "",
                 ].join(" ")}
             >
                 {preview ? (
@@ -75,33 +75,33 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
                             src={preview}
                             alt="Uploaded preview"
                             fill
-                            className="object-cover p-1 opacity-80"
+                            className="object-cover rounded-xl p-0.5 opacity-90"
                         />
-                        <div className="absolute inset-0 bg-cyan-500/10 mix-blend-overlay pointer-events-none" />
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                         <button
                             onClick={(e) => { e.stopPropagation(); clearImage(); }}
-                            className="absolute top-4 right-4 z-10 bg-black/80 border border-cyan-500/50 p-2 text-cyan-400 hover:bg-red-500 hover:text-white transition-all shadow-[0_0_10px_rgba(20,241,255,0.2)]"
+                            className="absolute top-3 right-3 z-10 w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/15 rounded-full flex items-center justify-center text-white/60 hover:bg-red-500/80 hover:text-white hover:border-red-500/50 transition-all"
                             aria-label="Remove image"
                         >
-                            <X size={16} strokeWidth={3} />
+                            <X size={13} strokeWidth={2.5} />
                         </button>
                     </>
                 ) : (
-                    <div className="flex flex-col items-center gap-4 text-center px-10 py-6">
+                    <div className="flex flex-col items-center gap-3 text-center px-8 py-8">
                         {isDragging ? (
-                            <ImageIcon size={44} className="text-cyan-400 animate-pulse drop-shadow-[0_0_8px_rgba(20,241,255,0.8)]" />
+                            <ImageIcon size={32} className="text-[#b2ff00]" />
                         ) : (
-                            <div className="w-14 h-14 bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-[inset_0_0_10px_rgba(20,241,255,0.1)]">
-                                <UploadCloud size={24} strokeWidth={3} />
+                            <div className="w-11 h-11 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-white/30">
+                                <UploadCloud size={20} strokeWidth={1.5} />
                             </div>
                         )}
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                                <span className="text-cyan-400 underline decoration-cyan-500/30 underline-offset-4">FETCH_ASSET</span> or Drop_Node
+                            <p className="text-sm font-medium text-white/40">
+                                <span className="text-[#b2ff00] font-semibold">Click to upload</span>{" "}
+                                or drag & drop
                             </p>
-                            <p className="text-[10px] font-bold text-white/20 mt-2 uppercase tracking-widest leading-none flex items-center gap-2 justify-center">
-                                <span className="w-1 h-1 bg-cyan-500 animate-pulse rounded-full" />
-                                PROTOCOL_01 :: 10MB_LIMIT
+                            <p className="text-[11px] text-white/20 mt-1">
+                                PNG, JPG, WebP — max {MAX_SIZE_MB} MB
                             </p>
                         </div>
                     </div>
@@ -118,8 +118,8 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
             />
 
             {error && (
-                <p className="mt-4 text-[10px] font-black uppercase text-red-500 text-center tracking-widest border border-red-950 p-2 bg-red-950/20 shadow-[0_0_10px_rgba(255,0,0,0.1)]">
-                    FATAL_ERROR :: {error}
+                <p className="mt-2.5 text-xs font-medium text-red-400 px-1">
+                    {error}
                 </p>
             )}
         </div>
