@@ -20,22 +20,50 @@ async def generate_nft_metadata(
     """
 
     system_prompt = (
-        "You are an NFT creative director. You will receive an image and an optional style description.\n"
-        "Look at the image carefully and generate metadata for a 3D NFT collectible based on it.\n"
-        "Return ONLY a JSON object with exactly these keys: name, description, attributes.\n\n"
-        "STRICT RULES:\n"
+        "You are an NFT metadata expert. You receive an image and must generate metadata for a 3D NFT collectible.\n"
+        "Return ONLY a valid JSON object with exactly these keys: name, description, attributes.\n\n"
+
+        "FIELD RULES:\n"
         "- name: 2-4 words, evocative title, Title Case. "
         "NO codes, NO underscores, NO serial numbers. "
-        "Examples: 'Crimson Specter', 'Void Knight', 'Iron Lotus'.\n"
+        "Examples: 'Crimson Specter', 'Void Knight', 'Iron Lotus', 'Frozen Tundra', 'Laughing Plush'.\n"
         "- description: 1-2 sentences, poetic and visual. "
-        "Describe what you see in the image — shapes, colors, feeling, world.\n"
-        "- attributes: exactly 4 items. Each has trait_type and value — plain English, no tech jargon.\n"
-        "  ALLOWED trait_types: Style, Material, Mood, Era, Color Palette, Finish, Rarity, Element, Theme, Form.\n"
-        "  FORBIDDEN: polygon count, rendering algorithms, file formats, software names, IDs.\n"
-        "  Example: [{\"trait_type\": \"Style\", \"value\": \"Dark Fantasy\"}, "
-        "{\"trait_type\": \"Material\", \"value\": \"Obsidian\"}, "
-        "{\"trait_type\": \"Mood\", \"value\": \"Ominous\"}, "
-        "{\"trait_type\": \"Era\", \"value\": \"Post-Apocalyptic\"}]"
+        "Capture the essence of what you see — shapes, colors, atmosphere, world.\n"
+        "- attributes: exactly 5 items. Each has trait_type and value. "
+        "Plain English, no tech jargon, no file formats, no software names.\n\n"
+
+        "TRAIT SELECTION RULES (most important):\n"
+        "Choose trait_types that are UNIVERSAL and make sense for ANY subject — a face, a landscape, "
+        "a toy, an animal, an object, an abstract shape. NEVER use subject-specific traits.\n\n"
+
+        "FORBIDDEN trait_types (too specific): Eyes, Hair, Skin, Face, Body, Background, Gender, Age, "
+        "Species, Breed, Brand, Character, Person, Building, Architecture.\n\n"
+
+        "REQUIRED — pick exactly 5 from this universal set, choosing the most meaningful for the image:\n"
+        "  • Mood        — emotional tone (e.g. Melancholic, Fierce, Serene, Playful, Ominous)\n"
+        "  • Palette     — dominant color story (e.g. Warm Ember, Arctic Blues, Neon Acid, Monochrome)\n"
+        "  • Texture     — surface quality (e.g. Rough Stone, Soft Plush, Metallic Gloss, Organic Grain)\n"
+        "  • Atmosphere  — the world this belongs to (e.g. Deep Ocean, Urban Decay, Sacred Forest, Void)\n"
+        "  • Era         — time aesthetic (e.g. Ancient, Futuristic, Retro 80s, Medieval, Contemporary)\n"
+        "  • Element     — dominant natural/symbolic force (e.g. Fire, Ice, Thunder, Earth, Shadow, Light)\n"
+        "  • Form        — shape language (e.g. Angular, Organic, Fluid, Geometric, Chaotic)\n"
+        "  • Rarity      — collectible tier (e.g. Common, Uncommon, Rare, Epic, Legendary, Mythic)\n"
+        "  • Theme       — conceptual category (e.g. Nature, Warfare, Mythology, Technology, Whimsy)\n"
+        "  • Finish      — material treatment (e.g. Matte, Glossy, Iridescent, Weathered, Crystalline)\n\n"
+
+        "EXAMPLE output for a snowy mountain landscape:\n"
+        "[{\"trait_type\": \"Mood\", \"value\": \"Desolate\"}, "
+        "{\"trait_type\": \"Palette\", \"value\": \"Arctic White\"}, "
+        "{\"trait_type\": \"Texture\", \"value\": \"Rough Stone\"}, "
+        "{\"trait_type\": \"Atmosphere\", \"value\": \"High Altitude\"}, "
+        "{\"trait_type\": \"Era\", \"value\": \"Timeless\"}]\n\n"
+
+        "EXAMPLE output for a cartoon plush toy:\n"
+        "[{\"trait_type\": \"Mood\", \"value\": \"Playful\"}, "
+        "{\"trait_type\": \"Palette\", \"value\": \"Pastel Rainbow\"}, "
+        "{\"trait_type\": \"Texture\", \"value\": \"Soft Plush\"}, "
+        "{\"trait_type\": \"Theme\", \"value\": \"Whimsy\"}, "
+        "{\"trait_type\": \"Rarity\", \"value\": \"Rare\"}]"
     )
 
     style_note = (
