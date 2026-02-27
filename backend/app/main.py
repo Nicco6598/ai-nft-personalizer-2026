@@ -5,8 +5,13 @@ Registers all routers and configures CORS to allow the
 Next.js frontend (localhost:3000 in dev, Vercel in prod) to call the API.
 """
 
-from fastapi import FastAPI
+import os
+import time
+from collections import defaultdict
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.routers import health, generate
 
@@ -19,14 +24,49 @@ app = FastAPI(
 )
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
-# In production, replace "*" with your Vercel deployment URL.
+# Set CORS_ORIGINS in .env to lock down in production.
+# Example: CORS_ORIGINS=https://your-app.vercel.app,https://www.your-app.vercel.app
+_raw_origins = os.getenv("CORS_ORIGINS", "*")
+origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: lock down to Vercel URL in prod
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Rate limiting ─────────────────────────────────────────────────────────────
+# Simple in-memory sliding window: max RATE_LIMIT requests per WINDOW seconds per IP.
+RATE_LIMIT = int(os.getenv("RATE_LIMIT_REQUESTS", "5"))
+WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "60"))
+
+_request_log: dict[str, list[float]] = defaultdict(list)
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if request.url.path == "/generate":
+        ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        window_start = now - WINDOW
+
+        # Purge old timestamps
+        _request_log[ip] = [t for t in _request_log[ip] if t > window_start]
+
+        if len(_request_log[ip]) >= RATE_LIMIT:
+            retry_after = int(WINDOW - (now - _request_log[ip][0]))
+            return JSONResponse(
+                status_code=429,
+                content={"detail": f"Too many requests. Try again in {retry_after}s."},
+                headers={"Retry-After": str(max(retry_after, 1))},
+            )
+
+        _request_log[ip].append(now)
+
+    return await call_next(request)
+
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(health.router, tags=["Health"])
