@@ -17,6 +17,6 @@ async def create_3d_task(image_content: bytes, content_type: str = "image/jpeg")
 
 
 async def wait_for_task(task_id: str, timeout: int = 300) -> str | None:
-    """Returns the mock GLB URL without any polling."""
-    await asyncio.sleep(0)
+    """Simulates Tripo AI processing time (~5s) so the frontend progress bar completes."""
+    await asyncio.sleep(5)
     return _MOCK_GLB_URL
