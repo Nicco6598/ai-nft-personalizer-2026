@@ -4,15 +4,15 @@ import { useState, useCallback, lazy, Suspense, useEffect, useRef } from "react"
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import {
-    Loader2,
-    Zap,
-    Box,
-    Sparkles,
-    Wallet,
-    Layers,
-    Menu,
-    X,
-} from "lucide-react";
+    CircleNotchIcon,
+    LightningIcon,
+    CubeIcon,
+    MagicWandIcon,
+    WalletIcon,
+    StackSimpleIcon,
+    ListIcon,
+    XIcon,
+} from "@phosphor-icons/react";
 import ImageUploader from "@/components/ImageUploader";
 
 const ModelViewer = lazy(() => import("@/components/ModelViewer"));
@@ -320,7 +320,7 @@ export default function HomeClient() {
                     {/* Logo */}
                     <div className="flex items-center gap-2.5">
                         <div className="w-6 h-6 rounded-md bg-[#b2ff00] flex items-center justify-center">
-                            <Layers size={13} className="text-black" strokeWidth={2.5} />
+                            <StackSimpleIcon size={13} weight="bold" className="text-black" />
                         </div>
                         <span className="font-bold text-[14px] text-white tracking-tight">NFTP</span>
                     </div>
@@ -346,7 +346,7 @@ export default function HomeClient() {
                                 color: isConnected ? "#b2ff00" : "rgba(255,255,255,0.45)",
                             }}
                         >
-                            <Wallet size={13} />
+                            <WalletIcon size={13} weight="fill" />
                             <span className="hidden sm:inline">
                                 {isConnected ? `${address?.slice(0, 6)}…${address?.slice(-4)}` : "Connect"}
                             </span>
@@ -360,8 +360,8 @@ export default function HomeClient() {
                             aria-label="Toggle menu"
                         >
                             {mobileOpen
-                                ? <X size={16} className="text-white/60" />
-                                : <Menu size={16} className="text-white/60" />
+                                ? <XIcon size={16} weight="bold" className="text-white/60" />
+                                : <ListIcon size={16} weight="bold" className="text-white/60" />
                             }
                         </button>
                     </div>
@@ -392,7 +392,7 @@ export default function HomeClient() {
                             className="text-left px-4 py-3 text-[14px] font-semibold rounded-xl transition-all w-full flex items-center gap-2"
                             style={{ color: isConnected ? "#b2ff00" : "rgba(255,255,255,0.5)" }}
                         >
-                            <Wallet size={14} />
+                            <WalletIcon size={14} weight="fill" />
                             {isConnected ? `${address?.slice(0, 6)}…${address?.slice(-4)}` : "Connect Wallet"}
                         </button>
                     </div>
@@ -470,7 +470,7 @@ export default function HomeClient() {
                                         style={{ color: card.color }}>{card.num}</span>
                                     <div className="w-8 h-8 rounded-xl flex items-center justify-center"
                                         style={{ background: `${card.color}14`, color: card.color }}>
-                                        <Sparkles size={14} />
+                                        <MagicWandIcon size={14} weight="duotone" />
                                     </div>
                                 </div>
                                 <p className="text-[15px] font-semibold text-white mb-2">{card.label}</p>
@@ -537,8 +537,8 @@ export default function HomeClient() {
                                         : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)", cursor: "not-allowed" }}
                                 >
                                     {isGenerating
-                                        ? <><Loader2 size={15} className="animate-spin" />Processing…</>
-                                        : <><Sparkles size={14} />Generate 3D NFT</>
+                                        ? <><CircleNotchIcon size={15} weight="bold" className="animate-spin" />Processing…</>
+                                        : <><MagicWandIcon size={14} weight="fill" />Generate 3D NFT</>
                                     }
                                 </button>
 
@@ -632,7 +632,7 @@ export default function HomeClient() {
                                         {/* Mint */}
                                         <button className="w-full py-3 rounded-full font-bold text-[13px] flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98]"
                                             style={{ background: "linear-gradient(135deg, #b2ff00 0%, #8fcc00 100%)", color: "#000" }}>
-                                            <Zap size={13} fill="currentColor" />
+                                            <LightningIcon size={13} weight="fill" />
                                             Mint NFT
                                         </button>
                                     </div>
@@ -640,7 +640,7 @@ export default function HomeClient() {
                                     <div className="flex flex-col items-center justify-center text-center py-10 gap-3">
                                         <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
                                             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                                            <Box size={20} className="text-white/15" />
+                                            <CubeIcon size={20} weight="duotone" className="text-white/15" />
                                         </div>
                                         <div>
                                             <p className="text-[13px] font-medium text-white/20">Output will appear here</p>
@@ -663,7 +663,7 @@ export default function HomeClient() {
                         <div>
                             <div className="flex items-center gap-2.5 mb-3">
                                 <div className="w-5 h-5 rounded-md bg-[#b2ff00] flex items-center justify-center">
-                                    <Layers size={11} className="text-black" strokeWidth={2.5} />
+                                    <StackSimpleIcon size={11} weight="bold" className="text-black" />
                                 </div>
                                 <span className="font-bold text-[13px] text-white tracking-tight">NFTP</span>
                             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useRef, DragEvent, ChangeEvent } from "react";
-import { UploadCloud, X, ImageIcon, CheckCircle2 } from "lucide-react";
+import { CloudArrowUpIcon, XIcon, ImageSquareIcon, CheckCircleIcon } from "@phosphor-icons/react";
 import Image from "next/image";
 
 const MAX_SIZE_MB = 10;
@@ -96,7 +96,7 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
                         <div className="px-3 py-2.5 flex items-center justify-between gap-3"
                             style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                             <div className="flex items-center gap-2 min-w-0">
-                                <CheckCircle2 size={13} className="text-[#b2ff00] flex-shrink-0" />
+                                <CheckCircleIcon size={13} weight="fill" className="text-[#b2ff00] flex-shrink-0" />
                                 <span className="text-[11px] text-white/50 font-medium truncate">
                                     {fileName}
                                 </span>
@@ -106,7 +106,7 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
                                 className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-red-500/20 transition-all"
                                 aria-label="Remove image"
                             >
-                                <X size={12} strokeWidth={2.5} />
+                                <XIcon size={12} weight="bold" />
                             </button>
                         </div>
                     </div>
@@ -122,8 +122,8 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
                             }}
                         >
                             {isDragging
-                                ? <ImageIcon size={20} style={{ color: "#b2ff00" }} />
-                                : <UploadCloud size={20} className="text-white/25" strokeWidth={1.5} />
+                                ? <ImageSquareIcon size={20} weight="duotone" style={{ color: "#b2ff00" }} />
+                                : <CloudArrowUpIcon size={20} weight="light" className="text-white/25" />
                             }
                         </div>
 
