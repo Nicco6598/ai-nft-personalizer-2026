@@ -13,7 +13,8 @@ frontend/out/
 frontend/.vercel/
 
 # ─── Python ────────────────────────────────────────────────
-backend/__pycache__/
+**/__pycache__/
+
 backend/.venv/
 backend/*.pyc
 backend/*.pyo
