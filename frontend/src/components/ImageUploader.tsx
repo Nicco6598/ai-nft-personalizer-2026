@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useRef, DragEvent, ChangeEvent } from "react";
-import { UploadCloud, X, ImageIcon } from "lucide-react";
+import { UploadCloud, X, ImageIcon, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 
 const MAX_SIZE_MB = 10;
@@ -12,6 +12,7 @@ interface ImageUploaderProps {
 
 export default function ImageUploader({ onChange }: ImageUploaderProps) {
     const [preview, setPreview] = useState<string | null>(null);
+    const [fileName, setFileName] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -28,6 +29,7 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
                 return;
             }
             setPreview(URL.createObjectURL(file));
+            setFileName(file.name);
             onChange(file);
         },
         [onChange]
@@ -50,6 +52,7 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
 
     const clearImage = () => {
         setPreview(null);
+        setFileName(null);
         onChange(null);
         if (inputRef.current) inputRef.current.value = "";
     };
@@ -61,47 +64,88 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={onDrop}
                 onClick={() => !preview && inputRef.current?.click()}
-                className={[
-                    "relative flex flex-col items-center justify-center w-full min-h-[180px] rounded-xl transition-all duration-150 cursor-pointer select-none border-2 border-dashed",
-                    isDragging
-                        ? "border-[#b2ff00]/60 bg-[#b2ff00]/5 scale-[1.01]"
-                        : "border-white/10 bg-[#0d1117] hover:border-white/20 hover:bg-white/3",
-                    preview ? "cursor-default border-solid border-white/10" : "",
-                ].join(" ")}
+                className="relative w-full select-none overflow-hidden rounded-xl transition-all duration-200"
+                style={{
+                    cursor: preview ? "default" : "pointer",
+                    border: isDragging
+                        ? "1px solid rgba(178,255,0,0.5)"
+                        : preview
+                            ? "1px solid rgba(255,255,255,0.08)"
+                            : "1px dashed rgba(255,255,255,0.1)",
+                    background: isDragging
+                        ? "rgba(178,255,0,0.04)"
+                        : "rgba(6,9,16,0.8)",
+                }}
             >
                 {preview ? (
-                    <>
-                        <Image
-                            src={preview}
-                            alt="Uploaded preview"
-                            fill
-                            className="object-cover rounded-xl p-0.5 opacity-90"
-                        />
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-                        <button
-                            onClick={(e) => { e.stopPropagation(); clearImage(); }}
-                            className="absolute top-3 right-3 z-10 w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/15 rounded-full flex items-center justify-center text-white/60 hover:bg-red-500/80 hover:text-white hover:border-red-500/50 transition-all"
-                            aria-label="Remove image"
-                        >
-                            <X size={13} strokeWidth={2.5} />
-                        </button>
-                    </>
-                ) : (
-                    <div className="flex flex-col items-center gap-3 text-center px-8 py-8">
-                        {isDragging ? (
-                            <ImageIcon size={32} className="text-[#b2ff00]" />
-                        ) : (
-                            <div className="w-11 h-11 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-white/30">
-                                <UploadCloud size={20} strokeWidth={1.5} />
+                    /* ── Preview state ── */
+                    <div className="relative">
+                        {/* Image */}
+                        <div className="relative w-full h-[200px]">
+                            <Image
+                                src={preview}
+                                alt="Uploaded preview"
+                                fill
+                                className="object-cover"
+                            />
+                            {/* Gradient overlay bottom */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#060910]/80 via-transparent to-transparent pointer-events-none" />
+                        </div>
+
+                        {/* Bottom info bar */}
+                        <div className="px-3 py-2.5 flex items-center justify-between gap-3"
+                            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <CheckCircle2 size={13} className="text-[#b2ff00] flex-shrink-0" />
+                                <span className="text-[11px] text-white/50 font-medium truncate">
+                                    {fileName}
+                                </span>
                             </div>
-                        )}
-                        <div>
-                            <p className="text-sm font-medium text-white/40">
-                                <span className="text-[#b2ff00] font-semibold">Click to upload</span>{" "}
-                                or drag & drop
+                            <button
+                                onClick={(e) => { e.stopPropagation(); clearImage(); }}
+                                className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-red-500/20 transition-all"
+                                aria-label="Remove image"
+                            >
+                                <X size={12} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    /* ── Empty state ── */
+                    <div className="flex flex-col items-center justify-center gap-4 px-8 py-10">
+                        {/* Icon */}
+                        <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center transition-all"
+                            style={{
+                                background: isDragging ? "rgba(178,255,0,0.12)" : "rgba(255,255,255,0.04)",
+                                border: isDragging ? "1px solid rgba(178,255,0,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                            }}
+                        >
+                            {isDragging
+                                ? <ImageIcon size={20} style={{ color: "#b2ff00" }} />
+                                : <UploadCloud size={20} className="text-white/25" strokeWidth={1.5} />
+                            }
+                        </div>
+
+                        {/* Text */}
+                        <div className="text-center">
+                            <p className="text-[13px] font-semibold text-white/50">
+                                {isDragging ? (
+                                    <span style={{ color: "#b2ff00" }}>Drop to upload</span>
+                                ) : (
+                                    <>
+                                        <span
+                                            className="font-bold transition-colors"
+                                            style={{ color: "#b2ff00" }}
+                                        >
+                                            Click to browse
+                                        </span>
+                                        {" "}or drag & drop
+                                    </>
+                                )}
                             </p>
-                            <p className="text-[11px] text-white/20 mt-1">
-                                PNG, JPG, WebP — max {MAX_SIZE_MB} MB
+                            <p className="text-[10px] text-white/20 mt-1.5 tracking-wide">
+                                PNG · JPG · WebP &nbsp;·&nbsp; max {MAX_SIZE_MB} MB
                             </p>
                         </div>
                     </div>
@@ -118,7 +162,8 @@ export default function ImageUploader({ onChange }: ImageUploaderProps) {
             />
 
             {error && (
-                <p className="mt-2.5 text-xs font-medium text-red-400 px-1">
+                <p className="mt-2 text-[11px] font-medium text-red-400 px-1 flex items-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-red-400 flex-shrink-0" />
                     {error}
                 </p>
             )}
