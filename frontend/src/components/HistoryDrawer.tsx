@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useAppStore, HistoryItem } from "@/lib/store";
 import {
     XIcon,
@@ -10,7 +10,6 @@ import {
     ArrowCounterClockwiseIcon,
     ImageIcon,
     TagIcon,
-    CalendarBlankIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 
@@ -28,12 +27,6 @@ function timeAgo(ts: number): string {
     const hours = Math.floor(mins / 60);
     if (hours < 24) return `${hours}h ago`;
     return `${Math.floor(hours / 24)}d ago`;
-}
-
-function formatDate(ts: number): string {
-    return new Date(ts).toLocaleDateString("en-US", {
-        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-    });
 }
 
 interface HistoryCardProps {
@@ -54,12 +47,11 @@ function HistoryCard({ item, index, onLoad, onDelete }: HistoryCardProps) {
         (async () => {
             const { gsap } = await import("gsap");
             gsap.fromTo(el,
-                { opacity: 0, y: 16, scale: 0.97 },
-                { opacity: 1, y: 0, scale: 1, duration: 0.38, ease: "power2.out", delay: index * 0.06 }
+                { opacity: 0, x: 20 },
+                { opacity: 1, x: 0, duration: 0.3, ease: "power2.out", delay: index * 0.05 }
             );
         })();
-    // Only run on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleDeleteClick = (e: React.MouseEvent) => {
@@ -68,7 +60,6 @@ function HistoryCard({ item, index, onLoad, onDelete }: HistoryCardProps) {
             onDelete(item.id);
         } else {
             setConfirmDelete(true);
-            // auto-cancel after 2.5s
             setTimeout(() => setConfirmDelete(false), 2500);
         }
     };
@@ -76,171 +67,81 @@ function HistoryCard({ item, index, onLoad, onDelete }: HistoryCardProps) {
     return (
         <div
             ref={cardRef}
-            className="group relative rounded-2xl overflow-hidden"
-            style={{
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                opacity: 0, // GSAP will animate in
-                transition: "border-color 0.2s ease, background 0.2s ease",
-            }}
-            onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(178,255,0,0.18)";
-                (e.currentTarget as HTMLElement).style.background = "rgba(178,255,0,0.025)";
-            }}
-            onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)";
-                (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.025)";
-            }}
+            className="group relative flex items-center overflow-hidden rounded-xl bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:border-[#b2ff00]/30 cursor-pointer"
+            onClick={() => onLoad(item)}
+            style={{ opacity: 0 }} // Will be animated in
         >
-            {/* Main clickable area */}
-            <button
-                onClick={() => onLoad(item)}
-                className="w-full text-left"
-                style={{ display: "block" }}
-            >
-                {/* Top row: thumbnail + info */}
-                <div className="flex items-start gap-3 p-3.5">
-                    {/* Thumbnail */}
-                    <div
-                        className="relative flex-shrink-0 rounded-xl overflow-hidden"
-                        style={{
-                            width: 64, height: 64,
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.07)",
-                        }}
-                    >
-                        {item.imageDataUrl ? (
-                            <Image
-                                src={item.imageDataUrl}
-                                alt={item.metadata.name}
-                                fill
-                                className="object-cover"
-                                sizes="64px"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <ImageIcon size={20} weight="duotone" style={{ color: "rgba(255,255,255,0.12)" }} />
-                            </div>
-                        )}
-                        {/* 3D badge */}
-                        <div
-                            className="absolute bottom-1 right-1 text-[8px] font-bold px-1 rounded"
-                            style={{ background: "rgba(8,11,16,0.8)", color: "rgba(178,255,0,0.7)", backdropFilter: "blur(4px)" }}
-                        >
-                            3D
-                        </div>
+            {/* Thumbnail */}
+            <div className="relative w-20 h-20 flex-shrink-0 bg-black/40 border-r border-white/10">
+                {item.imageDataUrl ? (
+                    <Image
+                        src={item.imageDataUrl}
+                        alt={item.metadata.name}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                    />
+                ) : (
+                    <div className="flex h-full w-full items-center justify-center text-white/20">
+                        <ImageIcon size={24} weight="duotone" />
                     </div>
+                )}
+                {/* 3D badge */}
+                <div className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[8px] font-bold text-[#b2ff00] backdrop-blur-md">
+                    3D
+                </div>
+            </div>
 
-                    {/* Text info */}
-                    <div className="flex-1 min-w-0 pt-0.5">
-                        <p
-                            className="text-[14px] font-bold text-white truncate leading-tight mb-1"
-                            style={{ fontFamily: "var(--font-serif)", fontStyle: "italic" }}
-                        >
-                            {item.metadata.name}
-                        </p>
-                        <p className="text-[11px] text-white/35 leading-relaxed line-clamp-2">
-                            {item.metadata.description}
-                        </p>
-                    </div>
+            {/* Content Area */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-3">
+                <div className="flex items-center justify-between mb-1">
+                    <p className="truncate font-serif text-sm font-bold italic text-white leading-tight pr-2">
+                        {item.metadata.name}
+                    </p>
+                    <span className="text-[10px] text-white/40 flex-shrink-0">
+                        {timeAgo(item.createdAt)}
+                    </span>
                 </div>
 
-                {/* Bottom bar: meta info + load hint */}
-                <div
-                    className="flex items-center justify-between px-3.5 pb-3"
-                >
-                    <div className="flex items-center gap-3">
-                        {/* Timestamp */}
-                        <div className="flex items-center gap-1">
-                            <CalendarBlankIcon size={10} style={{ color: "rgba(255,255,255,0.2)" }} />
-                            <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-                                {timeAgo(item.createdAt)}
-                            </span>
-                        </div>
-                        <span className="w-px h-3" style={{ background: "rgba(255,255,255,0.08)" }} />
-                        {/* Trait count */}
-                        <div className="flex items-center gap-1">
-                            <TagIcon size={10} style={{ color: "rgba(255,255,255,0.2)" }} />
-                            <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-                                {item.metadata.attributes.length} traits
-                            </span>
-                        </div>
+                <p className="line-clamp-1 text-xs text-white/50 mb-2">
+                    {item.metadata.description}
+                </p>
+
+                {/* Tags & Action row */}
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-white/30 text-[10px]">
+                        <TagIcon size={12} />
+                        <span>{item.metadata.attributes.length} traits</span>
                     </div>
 
-                    {/* Load button */}
-                    <div
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={{
-                            background: "rgba(178,255,0,0.08)",
-                            border: "1px solid rgba(178,255,0,0.2)",
-                            color: "#b2ff00",
-                            fontSize: 10,
-                            fontWeight: 700,
-                        }}
-                    >
-                        <ArrowCounterClockwiseIcon size={10} weight="bold" />
+                    <span className="w-px h-3 bg-white/10"></span>
+
+                    <div className="text-[10px] font-bold text-[#b2ff00] opacity-0 transition-opacity group-hover:opacity-100 flex items-center gap-1">
+                        <ArrowCounterClockwiseIcon size={12} weight="bold" />
                         Load
                     </div>
                 </div>
-            </button>
+            </div>
 
-            {/* Trait pills (max 4) */}
-            {item.metadata.attributes.length > 0 && (
-                <div
-                    className="flex flex-wrap gap-1.5 px-3.5 pb-3.5"
-                    style={{ borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 10 }}
+            {/* Quick Actions (Delete) */}
+            <div className="absolute top-0 right-0 bottom-0 flex items-center justify-center bg-black/40 backdrop-blur-md border-l border-white/5 opacity-0 group-hover:opacity-100 transition-all px-3">
+                <button
+                    onClick={handleDeleteClick}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${confirmDelete
+                            ? "bg-red-500/20 border-red-500/40 text-red-500"
+                            : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white"
+                        }`}
+                    title={confirmDelete ? "Click to confirm deletion" : "Delete"}
                 >
-                    {item.metadata.attributes.slice(0, 4).map(attr => (
-                        <span
-                            key={attr.trait_type}
-                            className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
-                            style={{
-                                background: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                color: "rgba(255,255,255,0.35)",
-                                letterSpacing: "0.04em",
-                            }}
-                        >
-                            {attr.trait_type}: {attr.value}
-                        </span>
-                    ))}
-                    {item.metadata.attributes.length > 4 && (
-                        <span
-                            className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
-                            style={{
-                                background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.06)",
-                                color: "rgba(255,255,255,0.2)",
-                            }}
-                        >
-                            +{item.metadata.attributes.length - 4}
-                        </span>
-                    )}
-                </div>
-            )}
-
-            {/* Delete button (absolute top-right) */}
-            <button
-                onClick={handleDeleteClick}
-                className="absolute top-2.5 right-2.5 w-6 h-6 flex items-center justify-center rounded-lg
-                           opacity-0 group-hover:opacity-100 transition-all duration-200"
-                style={{
-                    background: confirmDelete ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.06)",
-                    border: `1px solid ${confirmDelete ? "rgba(239,68,68,0.35)" : "rgba(255,255,255,0.09)"}`,
-                    color: confirmDelete ? "#f87171" : "rgba(255,255,255,0.3)",
-                }}
-                title={confirmDelete ? "Click again to confirm" : "Delete"}
-            >
-                <TrashIcon size={10} weight="bold" />
-            </button>
-
+                    <TrashIcon size={14} weight={confirmDelete ? "fill" : "bold"} />
+                </button>
+            </div>
         </div>
     );
 }
 
 export default function HistoryDrawer({ open, onClose }: HistoryDrawerProps) {
     const { history, clearHistory, loadFromHistory } = useAppStore();
-    const drawerRef = useRef<HTMLElement>(null);
 
     const deleteItem = (id: string) => {
         useAppStore.setState(s => ({ history: s.history.filter(h => h.id !== id) }));
@@ -261,177 +162,116 @@ export default function HistoryDrawer({ open, onClose }: HistoryDrawerProps) {
         return () => window.removeEventListener("keydown", onKey);
     }, [open, onClose]);
 
+    // Grouping logic for hierarchy
+    const groupedHistory = useMemo(() => {
+        const groups: { label: string; items: HistoryItem[] }[] = [
+            { label: "Today", items: [] },
+            { label: "Yesterday", items: [] },
+            { label: "Older", items: [] },
+        ];
+
+        const now = new Date();
+        const todayStr = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const yesterdayStr = todayStr - 86400000;
+
+        history.forEach(item => {
+            if (item.createdAt >= todayStr) {
+                groups[0].items.push(item);
+            } else if (item.createdAt >= yesterdayStr) {
+                groups[1].items.push(item);
+            } else {
+                groups[2].items.push(item);
+            }
+        });
+
+        // Filter out empty groups
+        return groups.filter(g => g.items.length > 0);
+    }, [history]);
+
     return (
         <>
             {/* Backdrop */}
             <div
                 onClick={onClose}
                 aria-hidden="true"
-                style={{
-                    position: "fixed", inset: 0, zIndex: 40,
-                    background: "rgba(0,0,0,0.65)",
-                    backdropFilter: "blur(6px)",
-                    WebkitBackdropFilter: "blur(6px)",
-                    opacity: open ? 1 : 0,
-                    pointerEvents: open ? "auto" : "none",
-                    transition: "opacity 0.28s ease",
-                }}
+                className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
             />
 
             {/* Drawer */}
             <aside
-                ref={drawerRef}
                 aria-label="Generation history"
-                style={{
-                    position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 50,
-                    width: "min(400px, 94vw)",
-                    background: "#0d1118",
-                    borderLeft: "1px solid rgba(255,255,255,0.07)",
-                    transform: open ? "translateX(0)" : "translateX(100%)",
-                    transition: "transform 0.32s cubic-bezier(0.4,0,0.2,1)",
-                    boxShadow: open ? "-32px 0 80px rgba(0,0,0,0.6)" : "none",
-                    display: "flex", flexDirection: "column",
-                    overflow: "hidden",
-                }}
+                className={`fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-md flex-col border-l border-white/10 bg-[#0d1118] shadow-2xl transition-transform duration-300 ease-in-out sm:w-[420px] max-w-[100vw] ${open ? "translate-x-0" : "translate-x-full"
+                    }`}
             >
                 {/* ── Header ── */}
-                <div
-                    style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        padding: "18px 20px 16px",
-                        borderBottom: "1px solid rgba(255,255,255,0.06)",
-                        flexShrink: 0,
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div
-                            style={{
-                                width: 30, height: 30, borderRadius: 10,
-                                background: "rgba(178,255,0,0.08)",
-                                border: "1px solid rgba(178,255,0,0.18)",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                            }}
-                        >
-                            <ClockCounterClockwiseIcon size={14} weight="fill" style={{ color: "#b2ff00" }} />
+                <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-5">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#b2ff00]/30 bg-[#b2ff00]/10 text-[#b2ff00]">
+                            <ClockCounterClockwiseIcon size={20} weight="fill" />
                         </div>
                         <div>
-                            <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>
-                                Generation History
-                            </p>
-                            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 1 }}>
+                            <h2 className="text-lg font-bold leading-tight text-white">History</h2>
+                            <p className="text-xs text-white/40">
                                 {history.length > 0
-                                    ? `${history.length} of ${10} saved locally`
-                                    : "No generations yet"}
+                                    ? `${history.length} items saved locally`
+                                    : "No recent generations"}
                             </p>
                         </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className="flex items-center gap-2">
                         {history.length > 0 && (
                             <button
                                 onClick={clearHistory}
-                                style={{
-                                    display: "flex", alignItems: "center", gap: 5,
-                                    padding: "5px 10px", borderRadius: 8,
-                                    background: "rgba(239,68,68,0.06)",
-                                    border: "1px solid rgba(239,68,68,0.15)",
-                                    color: "rgba(248,113,113,0.65)",
-                                    fontSize: 11, fontWeight: 600,
-                                    cursor: "pointer",
-                                    transition: "all 0.2s",
-                                }}
-                                onMouseEnter={e => {
-                                    (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.12)";
-                                    (e.currentTarget as HTMLElement).style.color = "#f87171";
-                                }}
-                                onMouseLeave={e => {
-                                    (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.06)";
-                                    (e.currentTarget as HTMLElement).style.color = "rgba(248,113,113,0.65)";
-                                }}
+                                className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300"
                                 title="Clear all history"
                             >
-                                <TrashIcon size={11} weight="bold" />
-                                Clear all
+                                <TrashIcon size={14} weight="bold" />
+                                <span className="hidden sm:inline">Clear all</span>
                             </button>
                         )}
                         <button
                             onClick={onClose}
-                            style={{
-                                width: 32, height: 32, borderRadius: 10,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                background: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                color: "rgba(255,255,255,0.4)",
-                                cursor: "pointer",
-                                transition: "all 0.2s",
-                            }}
-                            onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
-                                (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)";
-                            }}
-                            onMouseLeave={e => {
-                                (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
-                                (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)";
-                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
                             aria-label="Close history"
                         >
-                            <XIcon size={14} weight="bold" />
+                            <XIcon size={16} weight="bold" />
                         </button>
                     </div>
                 </div>
 
                 {/* ── Content ── */}
-                <div
-                    style={{
-                        flex: 1, overflowY: "auto", padding: "16px 16px 20px",
-                        scrollbarWidth: "thin",
-                        scrollbarColor: "rgba(255,255,255,0.08) transparent",
-                    }}
-                >
+                <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
                     {history.length === 0 ? (
                         /* Empty state */
-                        <div
-                            style={{
-                                display: "flex", flexDirection: "column",
-                                alignItems: "center", justifyContent: "center",
-                                gap: 14, padding: "60px 20px",
-                                textAlign: "center",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 56, height: 56, borderRadius: 18,
-                                    background: "rgba(255,255,255,0.03)",
-                                    border: "1px solid rgba(255,255,255,0.06)",
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                }}
-                            >
-                                <CubeIcon size={24} weight="duotone" style={{ color: "rgba(255,255,255,0.1)" }} />
+                        <div className="flex h-full flex-col items-center justify-center text-center opacity-80">
+                            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-white/20">
+                                <CubeIcon size={40} weight="duotone" />
                             </div>
-                            <div>
-                                <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.2)" }}>
-                                    No generations yet
-                                </p>
-                                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.1)", marginTop: 5, lineHeight: 1.5 }}>
-                                    Generate your first 3D NFT<br />and it will appear here
-                                </p>
-                            </div>
+                            <h3 className="mb-1 text-base font-bold text-white/60">No history found</h3>
+                            <p className="max-w-[200px] text-sm text-white/40">
+                                Generate your first 3D NFT and it will appear here automatically.
+                            </p>
                         </div>
                     ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                            {/* Most recent label */}
-                            <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.18)", letterSpacing: "0.1em", paddingLeft: 2, marginBottom: 2 }}>
-                                RECENT — {formatDate(history[0].createdAt)}
-                            </p>
-
-                            {history.map((item, i) => (
-                                <HistoryCard
-                                    key={item.id}
-                                    item={item}
-                                    index={i}
-                                    onLoad={handleLoad}
-                                    onDelete={deleteItem}
-                                />
+                        <div className="flex flex-col gap-6">
+                            {groupedHistory.map((group) => (
+                                <div key={group.label} className="flex flex-col gap-3">
+                                    <h3 className="text-xs font-bold tracking-wider text-white/30 uppercase pl-1">
+                                        {group.label}
+                                    </h3>
+                                    <div className="flex flex-col gap-2">
+                                        {group.items.map((item, index) => (
+                                            <HistoryCard
+                                                key={item.id}
+                                                item={item}
+                                                index={index}
+                                                onLoad={handleLoad}
+                                                onDelete={deleteItem}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     )}
@@ -439,15 +279,9 @@ export default function HistoryDrawer({ open, onClose }: HistoryDrawerProps) {
 
                 {/* ── Footer ── */}
                 {history.length > 0 && (
-                    <div
-                        style={{
-                            padding: "12px 20px",
-                            borderTop: "1px solid rgba(255,255,255,0.05)",
-                            flexShrink: 0,
-                        }}
-                    >
-                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.13)", textAlign: "center" }}>
-                            History is saved locally in your browser · Max 10 entries
+                    <div className="shrink-0 border-t border-white/10 bg-black/20 py-4 text-center">
+                        <p className="text-xs text-white/30">
+                            Items are temporarily cached in your local browser · Max 10 entries limit
                         </p>
                     </div>
                 )}
