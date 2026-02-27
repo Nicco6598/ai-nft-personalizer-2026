@@ -13,6 +13,8 @@ import uuid
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
 
+from app.services.groq_service import generate_nft_metadata
+
 router = APIRouter()
 
 
@@ -45,12 +47,8 @@ async def generate_nft(
     style_prompt: str = Form("", description="Optional style description"),
 ) -> GenerateResponse:
     """
-    [STUB] Generates a 3D NFT from a 2D image + optional style prompt.
-
-    Current behaviour: validates input and returns mock data.
-    Next step: integrate Tripo AI image-to-3D and Groq style enhancement.
+    Generates a 3D NFT from a 2D image + dynamic metadata from Groq.
     """
-    # Basic validation
     if image.content_type not in ("image/png", "image/jpeg", "image/webp"):
         raise HTTPException(
             status_code=422,
@@ -59,29 +57,24 @@ async def generate_nft(
 
     task_id = str(uuid.uuid4())
 
-    # TODO: Call Tripo AI API to convert image → 3D model
-    # TODO: Call Groq API with style_prompt to enhance metadata description
-    # TODO: Upload resulting .glb to Supabase Storage / Pinata
+    # 1. Generate Metadata using Groq
+    ai_metadata = await generate_nft_metadata(style_prompt)
 
+    # 2. TODO: Call Tripo AI API for 3D model
     mock_model_url = f"https://example.com/models/{task_id}.glb"
-    mock_metadata = NftMetadata(
-        name=f"AI NFT #{task_id[:8].upper()}",
-        description=(
-            f"A unique 3D NFT generated from your image. "
-            f"Style: {style_prompt or 'default'}."
-        ),
-        image=f"https://example.com/thumbnails/{task_id}.png",
+    
+    # 3. Combine Metadata
+    final_metadata = NftMetadata(
+        name=ai_metadata.get("name", f"NFT_{task_id[:8]}"),
+        description=ai_metadata.get("description", "A unique 3D generated asset."),
+        image=f"https://example.com/thumbnails/{task_id}.png", # Will be IPFS/S3
         model_url=mock_model_url,
-        attributes=[
-            NftAttribute(trait_type="Style", value=style_prompt or "Original"),
-            NftAttribute(trait_type="Generator", value="Tripo AI"),
-            NftAttribute(trait_type="Enhancer", value="Groq Llama 3.3 70B"),
-            NftAttribute(trait_type="Chain", value="Sepolia Testnet"),
-        ],
+        attributes=[NftAttribute(**attr) for attr in ai_metadata.get("attributes", [])]
     )
 
     return GenerateResponse(
         task_id=task_id,
         model_url=mock_model_url,
-        metadata=mock_metadata,
+        metadata=final_metadata,
     )
+
