@@ -4,23 +4,17 @@ import { useState, useCallback, lazy, Suspense } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import {
+    Loader2,
+    ArrowUpRight,
+    Zap,
+    Box,
     Sparkles,
     Wallet,
-    Loader2,
-    ChevronRight,
-    Github,
-    Zap,
-    Cpu,
-    Box,
-    Globe,
-    Shield
 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 
-// Lazy-load the heavy Three.js canvas
 const ModelViewer = lazy(() => import("@/components/ModelViewer"));
 
-// ── Types ───────────────────────────────────────────────────────────────────
 type GenerationStatus = "idle" | "loading" | "done" | "error";
 
 interface NftMetadata {
@@ -31,7 +25,6 @@ interface NftMetadata {
     attributes: Array<{ trait_type: string; value: string }>;
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
 export default function HomeClient() {
     const [image, setImage] = useState<File | null>(null);
     const [stylePrompt, setStylePrompt] = useState("");
@@ -52,18 +45,12 @@ export default function HomeClient() {
             const form = new FormData();
             form.append("image", image);
             form.append("style_prompt", stylePrompt.trim());
-
             const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-            const res = await fetch(`${apiUrl}/generate`, {
-                method: "POST",
-                body: form,
-            });
-
+            const res = await fetch(`${apiUrl}/generate`, { method: "POST", body: form });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
                 throw new Error(err?.detail ?? "Backend error");
             }
-
             const data: { model_url: string; metadata: NftMetadata } = await res.json();
             setModelUrl(data.model_url);
             setMetadata(data.metadata);
@@ -78,233 +65,272 @@ export default function HomeClient() {
     const canGenerate = !!image && !isGenerating;
 
     return (
-        <div className="relative min-h-screen bg-[#050505] text-white selection:bg-cyan-500 selection:text-black font-sans">
-            {/* ── Background Area ─────────────────────────────────────────── */}
-            <div className="fixed inset-0 -z-10 bg-[linear-gradient(to_right,#14f1ff08_1px,transparent_1px),linear-gradient(to_bottom,#14f1ff08_1px,transparent_1px)] [background-size:40px_40px]" />
-            <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_50%_-20%,#14f1ff15,transparent_60%)]" />
+        <div className="relative min-h-screen bg-[#0d1117] text-white font-sans overflow-x-hidden">
 
-            {/* ── Navigation ─────────────────────────────────────────────────── */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/90 backdrop-blur-xl border-b border-cyan-500/20 px-6 h-20">
-                <div className="max-w-6xl mx-auto h-full flex items-center justify-between">
-                    <div className="flex items-center gap-4 group cursor-pointer">
-                        <div className="w-10 h-10 bg-cyan-500 flex items-center justify-center text-black shadow-[0_0_20px_rgba(20,241,255,0.4)] group-hover:scale-110 transition-transform">
-                            <Zap size={22} fill="currentColor" />
-                        </div>
-                        <div className="flex flex-col leading-none">
-                            <span className="font-black text-xl tracking-tighter uppercase">
-                                NFT<span className="text-cyan-500">Personalizer</span>
-                            </span>
-                            <span className="text-[9px] font-bold text-cyan-500/50 tracking-[0.3em] mt-1">CORE_ENGINE_V2.0</span>
-                        </div>
+            {/* ── Ambient background glows ───────────────────────────── */}
+            <div className="fixed inset-0 -z-10 pointer-events-none">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] rounded-full bg-[#14f1ff] opacity-[0.04] blur-[120px]" />
+                <div className="absolute bottom-0 right-0 w-[600px] h-[400px] rounded-full bg-[#b2ff00] opacity-[0.03] blur-[100px]" />
+            </div>
+
+            {/* ── Navigation ─────────────────────────────────────────── */}
+            <nav className="sticky top-0 z-50 px-8 py-5">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-2 cursor-pointer">
+                        <span className="font-black text-xl tracking-wider uppercase text-white" style={{ letterSpacing: '0.15em' }}>
+                            NFT<span className="text-[#b2ff00]">P</span>
+                        </span>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="hidden lg:flex items-center gap-8 mr-8">
-                            {['Network', 'Terminal', 'Vault'].map(item => (
-                                <button key={item} className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-cyan-400 transition-colors">
-                                    {item}
-                                </button>
-                            ))}
-                        </div>
-                        <button
-                            onClick={() => isConnected ? disconnect() : connect({ connector: injected() })}
-                            className="h-10 px-6 bg-transparent text-cyan-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-black transition-all border border-cyan-500"
-                        >
-                            {isConnected ? `${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Connect_Wallet'}
-                        </button>
+                    <div className="hidden md:flex items-center gap-10">
+                        {['HOME', 'ABOUT', 'STUDIO', 'CONTACT'].map(item => (
+                            <button key={item} className="text-[11px] font-bold tracking-[0.18em] text-white/50 hover:text-white transition-colors">
+                                {item}
+                            </button>
+                        ))}
                     </div>
+
+                    <button
+                        onClick={() => isConnected ? disconnect() : connect({ connector: injected() })}
+                        className="flex items-center gap-2 h-9 px-5 border border-white/15 text-white/70 text-[11px] font-bold tracking-[0.1em] uppercase rounded-full hover:border-[#b2ff00]/60 hover:text-[#b2ff00] transition-all"
+                    >
+                        <Wallet size={13} />
+                        {isConnected ? `${address?.slice(0, 6)}…${address?.slice(-4)}` : 'Connect'}
+                    </button>
                 </div>
             </nav>
 
-            {/* ── Hero Section ─────────────────────────────────────────────── */}
-            <header className="pt-44 pb-24 px-6 text-center overflow-hidden">
-                <div className="max-w-6xl mx-auto relative">
-                    {/* Decorative Elements */}
-                    <div className="absolute top-1/2 left-0 -translate-y-1/2 w-32 h-px bg-gradient-to-r from-transparent to-cyan-500/50 hidden xl:block" />
-                    <div className="absolute top-1/2 right-0 -translate-y-1/2 w-32 h-px bg-gradient-to-l from-transparent to-cyan-500/50 hidden xl:block" />
+            {/* ── Hero ───────────────────────────────────────────────── */}
+            <header className="relative flex flex-col justify-center px-8" style={{ minHeight: 'calc(100vh - 74px)' }}>
 
-                    <div className="inline-flex items-center gap-3 px-4 py-1.5 border border-cyan-500/30 bg-cyan-500/5 text-cyan-400 text-[10px] font-black uppercase tracking-[0.3em] mb-10">
-                        <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" />
-                        Neural Synthesis Protocol Active
-                    </div>
+                {/* Glow orb centrato */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#14f1ff]/12 via-[#b2ff00]/5 to-transparent blur-[110px]" />
+                    <div className="absolute w-[440px] h-[440px] rounded-full border border-[#14f1ff]/8" />
+                    <div className="absolute w-[290px] h-[290px] rounded-full border border-[#b2ff00]/8" />
+                    <Zap size={64} className="absolute text-[#14f1ff]/12" strokeWidth={0.7} />
+                </div>
 
-                    <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.85] uppercase mb-8">
-                        Build Your <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-cyan-900">3D Legacy</span>
+                {/* Testo hero — allineato a sinistra, centrato verticalmente */}
+                <div className="max-w-7xl mx-auto w-full relative z-10 pb-20">
+                    <p className="text-sm font-medium text-white/40 mb-5 tracking-wider">The future is now</p>
+                    <h1 className="text-[clamp(3.5rem,9vw,7.5rem)] font-black uppercase leading-[0.88] tracking-tight mb-10">
+                        <span className="text-white block">CREATE YOUR</span>
+                        <span className="text-[#b2ff00] block">3D NFT</span>
                     </h1>
 
-                    <p className="text-lg md:text-xl text-white/40 max-w-2xl mx-auto leading-tight font-medium uppercase tracking-tight mb-12">
-                        Convert <span className="text-white">Image Data</span> into high-fidelity <span className="text-cyan-400">3D visual entities</span>.
-                        Strict structural logic. Zero decorative compromise.
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-0">
-                        <button className="w-full sm:w-auto px-14 py-6 bg-cyan-500 text-black font-black uppercase tracking-[0.2em] text-xs hover:bg-white transition-all shadow-[0_0_30px_rgba(20,241,255,0.3)]">
-                            Launch_Generator
+                    <div className="flex items-center gap-5">
+                        <button className="flex items-center gap-3 bg-white text-black font-bold text-sm px-7 py-3.5 rounded-full hover:bg-[#b2ff00] transition-colors group">
+                            Discover
+                            <span className="w-7 h-7 bg-[#0d1117] rounded-full flex items-center justify-center group-hover:bg-black transition-colors flex-shrink-0">
+                                <ArrowUpRight size={14} className="text-white" />
+                            </span>
                         </button>
-                        <button className="w-full sm:w-auto px-14 py-6 bg-transparent text-white font-black uppercase tracking-[0.2em] text-xs border border-cyan-500/30 border-t-0 sm:border-t sm:border-l-0 hover:bg-cyan-500/10 transition-all">
-                            Documentation
+                        <button className="text-[#b2ff00] font-bold text-sm tracking-wide hover:text-white transition-colors">
+                            Connect →
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* ── Main Workspace ─────────────────────────────────────────── */}
-            <main className="max-w-6xl mx-auto px-6 pb-40">
-
-                {/* Status Bar */}
-                <div className="flex items-center justify-between border border-cyan-500/20 bg-[#0a0a0a] px-6 py-4 mb-10">
-                    <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em]">
-                        <span className="flex items-center gap-2 text-cyan-400">
-                            <Cpu size={14} /> System: Online
-                        </span>
-                        <span className="hidden sm:flex items-center gap-2 text-white/30">
-                            <Globe size={14} /> Node: EU-West
-                        </span>
-                    </div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                        Sess: 0x{Math.floor(Math.random() * 10000)}
-                    </div>
+            {/* ── Feature cards row — bottom of hero like reference ─── */}
+            <section className="px-8 pb-10 -mt-2">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                        {
+                            label: "Image to 3D",
+                            desc: "Upload any image and transform it into a high-fidelity 3D asset powered by AI.",
+                            color: "#14f1ff"
+                        },
+                        {
+                            label: "Style Engine",
+                            desc: "Describe your style — cyberpunk, organic, abstract — and the engine interprets it.",
+                            color: "#8b5cf6"
+                        },
+                        {
+                            label: "Generative NFT",
+                            desc: "AI-driven creativity for unique on-chain digital collectibles, ready to mint.",
+                            color: "#f97316"
+                        },
+                    ].map((card, i) => (
+                        <div key={i} className="bg-[#161b27]/80 backdrop-blur-sm border border-white/6 rounded-2xl p-5 group hover:border-white/15 transition-all">
+                            {/* Top row: thumbnail + arrow */}
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="w-12 h-12 rounded-xl flex-shrink-0" style={{ background: `linear-gradient(135deg, ${card.color}35, ${card.color}12)` }} />
+                                <div className="w-7 h-7 bg-white/6 rounded-full flex items-center justify-center text-white/30 group-hover:bg-[#b2ff00]/20 group-hover:text-[#b2ff00] transition-all flex-shrink-0">
+                                    <ArrowUpRight size={13} />
+                                </div>
+                            </div>
+                            {/* Text below */}
+                            <p className="text-[11px] font-semibold text-white/70 mb-1">{card.label}</p>
+                            <p className="text-[11px] text-white/35 leading-relaxed">{card.desc}</p>
+                        </div>
+                    ))}
                 </div>
+            </section>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-cyan-500/20 border border-cyan-500/20">
+            {/* ── Studio / Generator ─────────────────────────────────── */}
+            <main className="px-8 pb-32 pt-16">
+                <div className="max-w-7xl mx-auto">
 
-                    {/* Left: Input Console */}
-                    <div className="bg-[#0a0a0a] p-10 lg:p-14">
-                        <div className="mb-12 pb-8 border-b border-cyan-500/20">
-                            <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Console_Input</h2>
-                            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mt-2">Feed raw image data to the engine</p>
-                        </div>
-
-                        <div className="space-y-12">
-                            <div>
-                                <label className="block text-[10px] font-black uppercase tracking-[0.4em] text-cyan-500/50 mb-4">
-                                    [01] SOURCE_UPLOAD
-                                </label>
-                                <ImageUploader onChange={setImage} />
-                            </div>
-
-                            <div>
-                                <label className="block text-[10px] font-black uppercase tracking-[0.4em] text-cyan-500/50 mb-4">
-                                    [02] STYLE_PARAMETERS
-                                </label>
-                                <textarea
-                                    value={stylePrompt}
-                                    onChange={(e) => setStylePrompt(e.target.value)}
-                                    placeholder="e.g. Cyberpunk armor, matte black finish, neon details..."
-                                    className="w-full h-40 bg-black border border-cyan-500/30 p-6 text-cyan-400 font-bold placeholder-white/10 focus:outline-none focus:border-cyan-400 transition-all resize-none shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]"
-                                />
-                            </div>
-
-                            <button
-                                onClick={handleGenerate}
-                                disabled={!canGenerate}
-                                className={[
-                                    "w-full py-6 font-black uppercase tracking-[0.2em] text-base transition-all flex items-center justify-center gap-4 border",
-                                    canGenerate
-                                        ? "bg-cyan-500 text-black border-cyan-500 hover:bg-white shadow-[0_0_25px_rgba(20,241,255,0.2)]"
-                                        : "bg-black text-white/10 border-white/5 cursor-not-allowed"
-                                ].join(" ")}
-                            >
-                                {isGenerating ? (
-                                    <>
-                                        <Loader2 size={24} className="animate-spin" />
-                                        Processing_Data...
-                                    </>
-                                ) : (
-                                    <>
-                                        Start_Generation
-                                        <ChevronRight size={20} strokeWidth={4} />
-                                    </>
-                                )}
-                            </button>
-                        </div>
-
-                        {errorMsg && (
-                            <div className="mt-8 p-5 bg-red-950/20 text-red-500 font-black text-xs uppercase tracking-[0.2em] border border-red-500/50">
-                                system_fail :: {errorMsg}
-                            </div>
-                        )}
+                    {/* Section header */}
+                    <div className="mb-10">
+                        <span className="text-[11px] font-bold tracking-[0.25em] text-[#b2ff00] uppercase">Studio</span>
+                        <h2 className="text-4xl font-black uppercase tracking-tight mt-2 leading-tight">
+                            Generate Your<br />
+                            <span className="text-white/25">3D Asset</span>
+                        </h2>
                     </div>
 
-                    {/* Right: Output Stream */}
-                    <div className="bg-[#050505] flex flex-col">
-                        <div className="flex-1 relative min-h-[500px] border-b border-cyan-500/20 bg-[#080808]">
-                            <Suspense fallback={
-                                <div className="absolute inset-0 flex items-center justify-center text-cyan-500/10 font-black text-[10px] uppercase tracking-[1em]">
-                                    LIFECYCLE_BOOT...
-                                </div>
-                            }>
-                                <ModelViewer modelUrl={modelUrl} />
-                            </Suspense>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-                            <div className="absolute top-8 left-8 border border-cyan-500/30 bg-black/80 backdrop-blur-md px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400">
-                                Preview_Output
+                        {/* Input panel */}
+                        <div className="bg-[#161b27] border border-white/6 rounded-2xl p-8">
+                            <div className="mb-8">
+                                <h3 className="text-lg font-bold text-white">Input Console</h3>
+                                <p className="text-xs text-white/35 mt-1 tracking-wide">Feed your image into the engine</p>
                             </div>
-                        </div>
 
-                        <div className="p-10 lg:p-14 bg-[#0a0a0a]">
-                            {metadata ? (
-                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="flex items-center gap-8 mb-10 pb-8 border-b border-cyan-500/20">
-                                        <div className="w-16 h-16 bg-cyan-500 text-black flex items-center justify-center text-3xl font-black shadow-[0_0_15px_rgba(20,241,255,0.3)]">
-                                            {metadata.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <h3 className="text-4xl font-black uppercase tracking-tighter leading-none text-white">{metadata.name}</h3>
-                                            <p className="text-cyan-500/40 mt-2 text-[10px] font-black uppercase tracking-[0.3em]">Hash_Sum: {metadata.model_url.slice(-12)}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-px bg-cyan-500/20 border border-cyan-500/20 mb-8">
-                                        {metadata.attributes.map((attr) => (
-                                            <div key={attr.trait_type} className="p-6 bg-[#050505]">
-                                                <span className="block text-[9px] font-black uppercase tracking-[0.3em] text-cyan-500/30 mb-2">
-                                                    {attr.trait_type}
-                                                </span>
-                                                <span className="text-sm font-black text-white uppercase tracking-tight">{attr.value}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <button className="w-full py-5 bg-transparent text-cyan-500 font-black uppercase tracking-[0.2em] text-[10px] hover:bg-cyan-500 hover:text-black transition-all border border-cyan-500 shadow-[0_0_15px_rgba(20,241,255,0.1)]">
-                                        Mint_on_Chain
-                                    </button>
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">
+                                        01 — Source Image
+                                    </label>
+                                    <ImageUploader onChange={setImage} />
                                 </div>
-                            ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-center py-10">
-                                    <div className="w-10 h-10 border border-white/5 flex items-center justify-center text-white/10 mb-6">
-                                        <Box size={24} className="animate-pulse" />
-                                    </div>
-                                    <p className="text-white/20 font-black text-[10px] uppercase tracking-[0.4em]">
-                                        Awaiting Data Signal...
-                                    </p>
+
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-[0.25em] text-white/30 mb-3">
+                                        02 — Style Parameters
+                                    </label>
+                                    <textarea
+                                        value={stylePrompt}
+                                        onChange={(e) => setStylePrompt(e.target.value)}
+                                        placeholder="e.g. Cyberpunk armor, neon details, matte black finish…"
+                                        className="w-full h-28 bg-[#0d1117] border border-white/8 rounded-xl p-4 text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#b2ff00]/40 transition-all resize-none"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={handleGenerate}
+                                    disabled={!canGenerate}
+                                    className={[
+                                        "w-full py-4 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-3",
+                                        canGenerate
+                                            ? "bg-[#b2ff00] text-black hover:bg-white"
+                                            : "bg-white/5 text-white/20 cursor-not-allowed"
+                                    ].join(" ")}
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <Loader2 size={18} className="animate-spin" />
+                                            Processing…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles size={17} />
+                                            Generate 3D NFT
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            {errorMsg && (
+                                <div className="mt-5 p-4 bg-red-500/10 text-red-400 text-xs font-medium rounded-xl border border-red-500/20">
+                                    {errorMsg}
                                 </div>
                             )}
+                        </div>
+
+                        {/* Output panel */}
+                        <div className="bg-[#161b27] border border-white/6 rounded-2xl flex flex-col overflow-hidden">
+                            {/* 3D viewer — altezza fissa per garantire rendering WebGL */}
+                            <div className="relative h-[360px] bg-[#0d1117] rounded-t-2xl overflow-hidden">
+                                <Suspense fallback={
+                                    <div className="absolute inset-0 flex items-center justify-center text-white/15 text-xs font-medium tracking-widest uppercase">
+                                        Loading…
+                                    </div>
+                                }>
+                                    <ModelViewer modelUrl={modelUrl} />
+                                </Suspense>
+                                <div className="absolute top-4 left-4 bg-white/5 backdrop-blur-sm border border-white/8 rounded-full px-3 py-1 text-[10px] font-bold text-white/35 tracking-wider uppercase">
+                                    Preview
+                                </div>
+                            </div>
+
+                            {/* NFT Info */}
+                            <div className="p-8">
+                                {metadata ? (
+                                    <div className="animate-in fade-in slide-in-from-bottom-3 duration-400">
+
+                                        {/* Name + description */}
+                                        <div className="mb-5">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-9 h-9 bg-[#b2ff00] rounded-lg text-black flex items-center justify-center text-base font-black flex-shrink-0">
+                                                    {metadata.name.charAt(0)}
+                                                </div>
+                                                <h3 className="font-bold text-white text-base leading-tight">{metadata.name}</h3>
+                                            </div>
+                                            {metadata.description && (
+                                                <p className="text-xs text-white/45 leading-relaxed mt-2 border-l-2 border-[#b2ff00]/30 pl-3">
+                                                    {metadata.description}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Traits */}
+                                        {metadata.attributes.length > 0 && (
+                                            <div className="mb-5">
+                                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/25 mb-3">NFT Traits</p>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {metadata.attributes.map((attr) => (
+                                                        <div key={attr.trait_type} className="p-3 bg-[#0d1117] rounded-xl border border-white/5">
+                                                            <span className="block text-[10px] text-white/35 mb-0.5 capitalize">
+                                                                {attr.trait_type.replace(/_/g, ' ')}
+                                                            </span>
+                                                            <span className="text-sm font-semibold text-white capitalize">{attr.value}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <button className="w-full py-3.5 bg-[#b2ff00] text-black font-bold text-sm rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2">
+                                            <Zap size={16} fill="currentColor" />
+                                            Mint on Chain
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center text-center py-8">
+                                        <div className="w-12 h-12 bg-white/4 rounded-xl flex items-center justify-center mb-4 border border-white/6">
+                                            <Box size={22} className="text-white/15" />
+                                        </div>
+                                        <p className="text-sm text-white/20 font-medium">Your 3D NFT will appear here</p>
+                                        <p className="text-xs text-white/10 mt-1">Upload an image and hit Generate</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </main>
 
-            {/* ── Footer ─────────────────────────────────────────────────────── */}
-            <footer className="bg-black py-24 px-6 text-white border-t border-cyan-500/10">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div className="flex flex-col items-center md:items-start gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 bg-cyan-500" />
-                            <span className="font-black text-xl uppercase tracking-tighter">NFTPersonalizer</span>
-                        </div>
-                        <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">© 2026 Protocol Foundation. Built by Antigravity.</p>
-                    </div>
+            {/* ── Footer ──────────────────────────────────────────────── */}
+            <footer className="border-t border-white/6 py-10 px-8">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5">
+                    <span className="font-black text-lg tracking-[0.15em] uppercase">
+                        NFT<span className="text-[#b2ff00]">P</span>
+                        <span className="text-white/20 font-normal text-sm ml-3">© 2026</span>
+                    </span>
 
-                    <div className="flex gap-12">
+                    <div className="flex gap-8">
                         {['GitHub', 'Twitter', 'Terms'].map(f => (
-                            <a key={f} href="#" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-cyan-400 transition-colors">{f}</a>
+                            <a key={f} href="#" className="text-xs text-white/25 hover:text-white transition-colors font-medium">{f}</a>
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-cyan-500/20">
-                        <Shield size={14} /> Security_Protocol_V7
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/15">
+                        Built with AI · 2026
                     </div>
                 </div>
             </footer>
