@@ -8,13 +8,8 @@ import {
     LightningIcon,
     CubeIcon,
     MagicWandIcon,
-    WalletIcon,
-    StackSimpleIcon,
-    ListIcon,
-    XIcon,
     CopySimpleIcon,
     DownloadSimpleIcon,
-    ClockCounterClockwiseIcon,
     CheckIcon,
     ScanIcon,
     CubeTransparentIcon,
@@ -23,6 +18,8 @@ import {
 } from "@phosphor-icons/react";
 import ImageUploader from "@/components/ImageUploader";
 import HistoryDrawer from "@/components/HistoryDrawer";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 import { useAppStore } from "@/lib/store";
 import { useToast } from "@/components/ToastProvider";
 
@@ -263,8 +260,6 @@ export default function HomeClient() {
 
     const generateBtnRef = useRef<HTMLButtonElement>(null);
     const traitsRef = useRef<HTMLDivElement>(null);
-    const navRef = useRef<HTMLElement>(null);
-    const [mobileOpen, setMobileOpen] = useState(false);
     const stepTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
     // ── Lenis smooth scroll ──────────────────────────────────
@@ -288,47 +283,6 @@ export default function HomeClient() {
         return () => {
             cancelAnimationFrame(rafId);
             lenisPromise.then(l => l.destroy());
-        };
-    }, []);
-
-    // ── Navbar hide/show on scroll ───────────────────────────
-    useEffect(() => {
-        const nav = navRef.current;
-        if (!nav) return;
-
-        let lastY = 0;
-        let rafId: number;
-        let ticking = false;
-
-        const update = async () => {
-            const { gsap } = await import("gsap");
-            const currentY = window.scrollY;
-            const delta = currentY - lastY;
-
-            if (currentY < 60) {
-                gsap.to(nav, { y: 0, duration: 0.35, ease: "power2.out" });
-            } else if (delta > 4) {
-                gsap.to(nav, { y: "-110%", duration: 0.35, ease: "power2.in" });
-                setMobileOpen(false);
-            } else if (delta < -4) {
-                gsap.to(nav, { y: 0, duration: 0.4, ease: "power2.out" });
-            }
-
-            lastY = currentY;
-            ticking = false;
-        };
-
-        const onScroll = () => {
-            if (!ticking) {
-                rafId = requestAnimationFrame(update);
-                ticking = true;
-            }
-        };
-
-        window.addEventListener("scroll", onScroll, { passive: true });
-        return () => {
-            window.removeEventListener("scroll", onScroll);
-            cancelAnimationFrame(rafId);
         };
     }, []);
 
@@ -609,155 +563,53 @@ export default function HomeClient() {
             </div>
 
             {/* ── Nav ── */}
-            <nav ref={navRef} className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10"
-                style={{ background: "rgba(8,11,16,0.82)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-
-                <div className="max-w-6xl mx-auto h-[60px] flex items-center justify-between">
-
-                    {/* Logo */}
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-md bg-[#b2ff00] flex items-center justify-center">
-                            <StackSimpleIcon size={13} weight="bold" className="text-black" />
-                        </div>
-                        <span className="font-bold text-[14px] text-white tracking-tight">NFTP</span>
-                    </div>
-
-                    {/* Desktop links */}
-                    <div className="hidden md:flex items-center gap-1">
-                        {["Explore", "Create", "Docs"].map(item => (
-                            <button key={item}
-                                className="px-4 py-2 text-[13px] font-medium text-white/40 hover:text-white/80 hover:bg-white/5 rounded-xl transition-all">
-                                {item}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Right: history + wallet + hamburger */}
-                    <div className="flex items-center gap-3">
-                        {/* History button */}
-                        <button
-                            onClick={() => setHistoryOpen(true)}
-                            className="relative flex items-center gap-2 h-8 px-3 rounded-full text-[12px] font-semibold transition-all"
-                            style={{
-                                background: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                color: "rgba(255,255,255,0.45)",
-                            }}
-                        >
-                            <ClockCounterClockwiseIcon size={13} weight="fill" />
-                            <span className="hidden sm:inline">History</span>
-                            {history.length > 0 && (
-                                <span
-                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center text-black"
-                                    style={{ background: "#b2ff00" }}
-                                >
-                                    {history.length}
-                                </span>
-                            )}
-                        </button>
-
-                        {/* Wallet */}
-                        <button
-                            onClick={() => isConnected ? disconnect() : connect({ connector: injected() })}
-                            className="flex items-center gap-2 h-8 px-4 rounded-full text-[12px] font-semibold transition-all"
-                            style={{
-                                background: isConnected ? "rgba(178,255,0,0.08)" : "rgba(255,255,255,0.05)",
-                                border: isConnected ? "1px solid rgba(178,255,0,0.25)" : "1px solid rgba(255,255,255,0.08)",
-                                color: isConnected ? "#b2ff00" : "rgba(255,255,255,0.45)",
-                            }}
-                        >
-                            <WalletIcon size={13} weight="fill" />
-                            <span className="hidden sm:inline">
-                                {isConnected ? `${address?.slice(0, 6)}…${address?.slice(-4)}` : "Connect"}
-                            </span>
-                        </button>
-
-                        {/* Hamburger — mobile only */}
-                        <button
-                            onClick={() => setMobileOpen(o => !o)}
-                            className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl transition-all"
-                            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
-                            aria-label="Toggle menu"
-                        >
-                            {mobileOpen
-                                ? <XIcon size={16} weight="bold" className="text-white/60" />
-                                : <ListIcon size={16} weight="bold" className="text-white/60" />
-                            }
-                        </button>
-                    </div>
-                </div>
-
-                {/* Mobile drawer */}
-                <div
-                    className="md:hidden overflow-hidden transition-all duration-300 ease-in-out"
-                    style={{
-                        maxHeight: mobileOpen ? "280px" : "0px",
-                        opacity: mobileOpen ? 1 : 0,
-                        borderTop: mobileOpen ? "1px solid rgba(255,255,255,0.05)" : "none",
-                    }}
-                >
-                    <div className="py-4 flex flex-col gap-1">
-                        {["Explore", "Create", "Docs"].map(item => (
-                            <button
-                                key={item}
-                                onClick={() => setMobileOpen(false)}
-                                className="text-left px-4 py-3 text-[14px] font-medium text-white/50 hover:text-white hover:bg-white/5 rounded-xl transition-all w-full"
-                            >
-                                {item}
-                            </button>
-                        ))}
-                        <div className="h-px mx-4 my-1" style={{ background: "rgba(255,255,255,0.06)" }} />
-                        <button
-                            onClick={() => { setHistoryOpen(true); setMobileOpen(false); }}
-                            className="text-left px-4 py-3 text-[14px] font-medium text-white/50 hover:text-white hover:bg-white/5 rounded-xl transition-all w-full flex items-center gap-2"
-                        >
-                            <ClockCounterClockwiseIcon size={14} weight="fill" />
-                            History {history.length > 0 && `(${history.length})`}
-                        </button>
-                        <button
-                            onClick={() => { isConnected ? disconnect() : connect({ connector: injected() }); setMobileOpen(false); }}
-                            className="text-left px-4 py-3 text-[14px] font-semibold rounded-xl transition-all w-full flex items-center gap-2"
-                            style={{ color: isConnected ? "#b2ff00" : "rgba(255,255,255,0.5)" }}
-                        >
-                            <WalletIcon size={14} weight="fill" />
-                            {isConnected ? `${address?.slice(0, 6)}…${address?.slice(-4)}` : "Connect Wallet"}
-                        </button>
-                    </div>
-                </div>
-            </nav>
+            <NavBar
+                onHistoryClick={() => setHistoryOpen(true)}
+                isConnected={isConnected}
+                address={address}
+                onWalletClick={() => isConnected ? disconnect() : connect({ connector: injected() })}
+                historyCount={history.length}
+            />
 
             {/* ── Hero ── */}
-            <header className="px-6 md:px-10 pt-36 pb-24">
+            <header className="px-6 md:px-10 pt-36 pb-28">
                 <div className="max-w-6xl mx-auto">
-                    <div className="max-w-3xl">
+                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-10">
 
-                        <p className="hero-line text-[13px] font-medium text-white/30 mb-7 tracking-wide">
-                            Generative 3D collectibles
-                        </p>
-
-                        <h1 className="mb-8 leading-[1.05]">
-                            <span className="hero-line block text-[clamp(2.8rem,7vw,6rem)] font-black text-white tracking-tight">
+                        {/* Left — eyebrow + giant H1 */}
+                        <div>
+                            <div className="hero-line flex items-center gap-3 mb-8">
+                                <div className="w-8 h-px" style={{ background: "#b2ff00" }} />
+                                <span className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
+                                    Generative 3D collectibles
+                                </span>
+                            </div>
+                            <h1 className="hero-line font-black leading-[0.92] tracking-tight"
+                                style={{ fontSize: "clamp(4rem, 10vw, 9rem)" }}>
                                 Turn any image
-                            </span>
-                            <span className="hero-line block text-[clamp(2.8rem,7vw,6rem)] tracking-tight"
-                                style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "#b2ff00" }}>
-                                into a 3D NFT.
-                            </span>
-                        </h1>
+                                <br />
+                                <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "#b2ff00" }}>
+                                    into a 3D NFT.
+                                </span>
+                            </h1>
+                        </div>
 
-                        <p className="hero-line text-[15px] text-white/40 leading-relaxed max-w-lg mb-10">
-                            Upload a face, a landscape, an object — anything. The pipeline generates a 3D model with AI-crafted metadata, ready to mint on-chain.
-                        </p>
-
-                        <div className="hero-line flex items-center gap-4">
-                            <a href="#studio"
-                                className="inline-flex items-center gap-2 bg-[#b2ff00] text-black font-bold text-[13px] px-6 py-3 rounded-full hover:bg-white transition-colors">
-                                Start creating
-                            </a>
-                            <a href="#studio"
-                                className="text-[13px] font-medium text-white/35 hover:text-white/70 transition-colors">
-                                See how it works →
-                            </a>
+                        {/* Right — description + CTAs */}
+                        <div className="hero-line md:max-w-xs md:text-right md:pb-3">
+                            <p className="text-[14px] text-white/45 leading-relaxed mb-6">
+                                Upload a face, a landscape, an object — anything. The pipeline generates a 3D model with AI-crafted metadata, ready to mint on-chain.
+                            </p>
+                            <div className="flex items-center gap-4 md:justify-end">
+                                <a href="#studio"
+                                    className="px-6 py-2.5 text-[12px] font-bold tracking-widest uppercase transition-all hover:opacity-90"
+                                    style={{ background: "#b2ff00", color: "#000" }}>
+                                    Start creating
+                                </a>
+                                <a href="#studio"
+                                    className="text-[12px] font-semibold tracking-widest uppercase text-white/35 hover:text-[#b2ff00] transition-colors">
+                                    How it works →
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -766,7 +618,8 @@ export default function HomeClient() {
             {/* ── Feature cards ── */}
             <section className="px-6 md:px-10 pb-24">
                 <div className="max-w-6xl mx-auto">
-                    <div className="feature-cards grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="feature-cards grid grid-cols-1 sm:grid-cols-3 gap-px"
+                        style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.06)" }}>
                         {[
                             {
                                 num: "01",
@@ -787,20 +640,11 @@ export default function HomeClient() {
                                 color: "#8b5cf6",
                             },
                         ].map((card, i) => (
-                            <div key={i} className="feature-card group rounded-3xl p-6 transition-all duration-300 cursor-default"
-                                style={{
-                                    background: "rgba(255,255,255,0.02)",
-                                    border: "1px solid rgba(255,255,255,0.06)",
-                                }}>
-                                <div className="flex items-center justify-between mb-5">
-                                    <span className="text-[11px] font-bold tracking-widest"
-                                        style={{ color: card.color }}>{card.num}</span>
-                                    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                                        style={{ background: `${card.color}14`, color: card.color }}>
-                                        <MagicWandIcon size={14} weight="duotone" />
-                                    </div>
-                                </div>
-                                <p className="text-[15px] font-semibold text-white mb-2">{card.label}</p>
+                            <div key={i} className="feature-card p-8 cursor-default"
+                                style={{ background: "#0d1117" }}>
+                                <p className="text-[11px] font-semibold mb-5 tracking-widest"
+                                    style={{ color: card.color }}>{card.num} /</p>
+                                <p className="text-[16px] font-bold text-white mb-3 leading-tight">{card.label}</p>
                                 <p className="text-[12px] text-white/35 leading-relaxed">{card.desc}</p>
                             </div>
                         ))}
@@ -813,38 +657,49 @@ export default function HomeClient() {
                 <div className="max-w-6xl mx-auto">
 
                     <div className="studio-header mb-12">
-                        <p className="text-[12px] font-semibold text-[#b2ff00] mb-2 tracking-wider">Studio</p>
-                        <h2 className="text-[2rem] font-black text-white tracking-tight leading-tight">
-                            Generate your asset
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-8 h-px" style={{ background: "#b2ff00" }} />
+                            <span className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">Studio</span>
+                        </div>
+                        <h2 className="font-black text-white tracking-tight leading-[0.92]"
+                            style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}>
+                            Generate your
+                            <br />
+                            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "#b2ff00" }}>
+                                3D asset
+                            </span>
                         </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-px"
+                        style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.07)" }}>
 
                         {/* ── Input panel ── */}
-                        <div className="panel-input rounded-3xl"
-                            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                        <div className="panel-input" style={{ background: "#0d1117" }}>
                             <div className="px-7 pt-7 pb-0 mb-6">
-                                <p className="text-[15px] font-semibold text-white">Source</p>
-                                <p className="text-[12px] text-white/30 mt-0.5">Upload your image to get started</p>
+                                <div className="flex items-baseline gap-3">
+                                    <span className="text-[11px] font-semibold text-white/20">01 /</span>
+                                    <p className="text-[15px] font-bold text-white">Source</p>
+                                </div>
+                                <p className="text-[12px] text-white/30 mt-1 pl-10">Upload your image to get started</p>
                             </div>
                             <div className="px-7 pb-7 space-y-5">
                                 <div>
-                                    <label className="block text-[11px] font-semibold text-white/25 mb-2.5 tracking-wider">
+                                    <label className="block text-[11px] font-semibold text-white/25 mb-2.5 tracking-widest uppercase">
                                         Image
                                     </label>
                                     <ImageUploader onChange={setImage} />
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] font-semibold text-white/25 mb-2.5 tracking-wider">
-                                        Style prompt <span className="text-white/15 font-normal">(optional)</span>
+                                    <label className="block text-[11px] font-semibold text-white/25 mb-2.5 tracking-widest uppercase">
+                                        Style prompt <span className="text-white/15 font-normal normal-case">(optional)</span>
                                     </label>
                                     <textarea
                                         value={stylePrompt}
                                         onChange={(e) => setStylePrompt(e.target.value)}
                                         placeholder="e.g. Cyberpunk armor, neon details, matte finish…"
                                         rows={3}
-                                        className="w-full rounded-2xl px-4 py-3 text-[13px] text-white/70 placeholder-white/15 focus:outline-none resize-none transition-all"
+                                        className="w-full px-4 py-3 text-[13px] text-white/70 placeholder-white/15 focus:outline-none resize-none transition-all"
                                         style={{
                                             background: "rgba(255,255,255,0.03)",
                                             border: "1px solid rgba(255,255,255,0.07)",
@@ -858,10 +713,10 @@ export default function HomeClient() {
                                     ref={generateBtnRef}
                                     onClick={handleGenerate}
                                     disabled={!canGenerate}
-                                    className="w-full py-3.5 rounded-full font-bold text-[13px] flex items-center justify-center gap-2 transition-all"
+                                    className="w-full py-3.5 font-bold text-[12px] tracking-widest uppercase flex items-center justify-center gap-2 transition-all"
                                     style={canGenerate
                                         ? { background: "#b2ff00", color: "#000", cursor: "pointer" }
-                                        : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)", cursor: "not-allowed" }}
+                                        : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)", cursor: "not-allowed", border: "1px solid rgba(255,255,255,0.06)" }}
                                 >
                                     {isGenerating
                                         ? <><CircleNotchIcon size={15} weight="bold" className="animate-spin" />Processing…</>
@@ -884,11 +739,10 @@ export default function HomeClient() {
                         </div>
 
                         {/* ── Output panel ── */}
-                        <div className="panel-output rounded-3xl overflow-hidden flex flex-col"
-                            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                        <div className="panel-output flex flex-col" style={{ background: "#0d1117" }}>
 
                             {/* Viewer */}
-                            <div className="relative h-[320px] overflow-hidden rounded-t-3xl"
+                            <div className="relative h-[320px] overflow-hidden"
                                 style={{ background: "#060910" }}>
                                 <Suspense fallback={
                                     <div className="absolute inset-0 flex items-center justify-center text-white/15 text-[11px] tracking-widest">
@@ -898,7 +752,7 @@ export default function HomeClient() {
                                     <ModelViewer modelUrl={modelUrl} />
                                 </Suspense>
                                 <div className="absolute top-4 left-4">
-                                    <span className="text-[10px] font-semibold tracking-widest px-3 py-1.5 rounded-full"
+                                    <span className="text-[10px] font-semibold tracking-widest px-2.5 py-1"
                                         style={{ background: "rgba(8,11,16,0.7)", color: "rgba(255,255,255,0.25)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.06)" }}>
                                         3D
                                     </span>
@@ -913,12 +767,12 @@ export default function HomeClient() {
                                         {/* Name + actions */}
                                         <div className="mb-5">
                                             <div className="flex items-start justify-between gap-3 mb-1">
-                                                <p className="text-[11px] text-white/25 font-medium tracking-wider">Name</p>
+                                                <p className="text-[11px] text-white/25 font-semibold tracking-widest uppercase">02 / Output</p>
                                                 {/* Copy + Download */}
                                                 <div className="flex items-center gap-1.5 flex-shrink-0">
                                                     <button
                                                         onClick={handleCopyMetadata}
-                                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all"
+                                                        className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all"
                                                         style={{
                                                             background: "rgba(255,255,255,0.04)",
                                                             border: "1px solid rgba(255,255,255,0.08)",
@@ -931,7 +785,7 @@ export default function HomeClient() {
                                                     </button>
                                                     <button
                                                         onClick={handleDownloadMetadata}
-                                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all"
+                                                        className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all"
                                                         style={{
                                                             background: "rgba(255,255,255,0.04)",
                                                             border: "1px solid rgba(255,255,255,0.08)",
@@ -944,7 +798,7 @@ export default function HomeClient() {
                                                     </button>
                                                 </div>
                                             </div>
-                                            <h3 className="text-xl font-black text-white leading-tight"
+                                            <h3 className="text-xl font-black text-white leading-tight mt-3"
                                                 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic" }}>
                                                 {metadata.name}
                                             </h3>
@@ -961,25 +815,25 @@ export default function HomeClient() {
                                         {metadata.attributes.length > 0 && (
                                             <div className="mb-6" ref={traitsRef}>
                                                 <div className="flex items-center justify-between mb-3">
-                                                    <p className="text-[11px] font-semibold text-white/25 tracking-wider">Properties</p>
+                                                    <p className="text-[11px] font-semibold text-white/25 tracking-widest uppercase">Properties</p>
                                                     <span className="text-[11px] text-white/20">{metadata.attributes.length} traits</span>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <div className="grid grid-cols-2 gap-px"
+                                                    style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.06)" }}>
                                                     {metadata.attributes.map((attr) => {
                                                         const c = TRAIT_COLORS[attr.trait_type] ?? { border: "#ffffff", label: "#ffffff60", dot: "#ffffff40" };
                                                         return (
                                                             <div
                                                                 key={attr.trait_type}
-                                                                className="trait-card px-3 py-2.5 rounded-2xl flex flex-col gap-1.5"
+                                                                className="trait-card px-3 py-2.5 flex flex-col gap-1.5"
                                                                 style={{
-                                                                    background: `${c.border}0a`,
-                                                                    border: `1px solid ${c.border}22`,
+                                                                    background: "#0d1117",
                                                                     transformStyle: "preserve-3d",
                                                                     willChange: "transform",
                                                                 }}
                                                             >
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: c.dot }} />
+                                                                    <span className="w-1.5 h-1.5 flex-shrink-0" style={{ background: c.dot }} />
                                                                     <span className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: c.label }}>
                                                                         {attr.trait_type}
                                                                     </span>
@@ -993,16 +847,16 @@ export default function HomeClient() {
                                         )}
 
                                         {/* Mint */}
-                                        <button className="w-full py-3 rounded-full font-bold text-[13px] flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98]"
-                                            style={{ background: "linear-gradient(135deg, #b2ff00 0%, #8fcc00 100%)", color: "#000" }}>
+                                        <button className="w-full py-3 font-bold text-[12px] tracking-widest uppercase flex items-center justify-center gap-2 transition-all hover:opacity-90"
+                                            style={{ background: "#b2ff00", color: "#000" }}>
                                             <LightningIcon size={13} weight="fill" />
                                             Mint NFT
                                         </button>
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center text-center py-10 gap-3">
-                                        <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                                            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                        <div className="w-11 h-11 flex items-center justify-center"
+                                            style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
                                             <CubeIcon size={20} weight="duotone" className="text-white/15" />
                                         </div>
                                         <div>
@@ -1020,58 +874,7 @@ export default function HomeClient() {
             </main>
 
             {/* ── Footer ── */}
-            <footer className="px-6 md:px-10 py-12"
-                style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <div className="max-w-6xl mx-auto">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
-
-                        <div>
-                            <div className="flex items-center gap-2.5 mb-3">
-                                <div className="w-5 h-5 rounded-md bg-[#b2ff00] flex items-center justify-center">
-                                    <StackSimpleIcon size={11} weight="bold" className="text-black" />
-                                </div>
-                                <span className="font-bold text-[13px] text-white tracking-tight">NFTP</span>
-                            </div>
-                            <p className="text-[12px] text-white/25 max-w-xs leading-relaxed">
-                                Generative 3D NFTs from your images.
-                            </p>
-                        </div>
-
-                        <div className="flex gap-12">
-                            <div>
-                                <p className="text-[10px] font-semibold text-white/20 mb-3 tracking-wider">Product</p>
-                                <div className="flex flex-col gap-2.5">
-                                    {["Studio", "Explore", "Roadmap"].map(l => (
-                                        <a key={l} href="#" className="text-[12px] text-white/30 hover:text-white/70 transition-colors">{l}</a>
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-semibold text-white/20 mb-3 tracking-wider">Community</p>
-                                <div className="flex flex-col gap-2.5">
-                                    {["Twitter", "Discord", "GitHub"].map(l => (
-                                        <a key={l} href="#" className="text-[12px] text-white/30 hover:text-white/70 transition-colors">{l}</a>
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-semibold text-white/20 mb-3 tracking-wider">Legal</p>
-                                <div className="flex flex-col gap-2.5">
-                                    {["Terms", "Privacy"].map(l => (
-                                        <a key={l} href="#" className="text-[12px] text-white/30 hover:text-white/70 transition-colors">{l}</a>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3"
-                        style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                        <span className="text-[11px] text-white/15">© 2026 NFTP. All rights reserved.</span>
-                        <span className="text-[11px] text-white/15">hello@nftp.xyz</span>
-                    </div>
-                </div>
-            </footer>
+            <Footer />
 
             {/* ── History Drawer ── */}
             <HistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} />
