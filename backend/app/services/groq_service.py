@@ -1,8 +1,11 @@
 import os
 import json
 import base64
+import logging
 from groq import Groq
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -104,7 +107,7 @@ async def generate_nft_metadata(
         return json.loads(completion.choices[0].message.content)
 
     except Exception as e:
-        print(f"Groq API Error: {e}")
+        logger.error("Groq API error: %s", type(e).__name__)
         return {
             "name": "Neon Specter",
             "description": "A luminous 3D entity forged from light and shadow, pulsing with electric energy.",

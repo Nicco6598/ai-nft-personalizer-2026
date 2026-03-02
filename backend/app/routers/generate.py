@@ -9,9 +9,50 @@ Returns a mock response for now. The Tripo AI + Groq integration
 will be added in the next step of development.
 """
 
+import re
 import uuid
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
+
+# ── Prompt sanitization ────────────────────────────────────────────────────────
+_MAX_PROMPT_LEN = 300
+# Strip patterns that look like prompt injection attempts
+_INJECTION_RE = re.compile(
+    r"(ignore\s+(previous|above|all)\s+instructions?|"
+    r"system\s*prompt|you\s+are\s+now|forget\s+everything|"
+    r"act\s+as\s+|roleplay\s+as\s+|pretend\s+(you\s+are|to\s+be))",
+    re.IGNORECASE,
+)
+
+def _sanitize_prompt(prompt: str) -> str:
+    """Truncate and strip obvious prompt-injection patterns from user input."""
+    prompt = prompt.strip()[:_MAX_PROMPT_LEN]
+    if _INJECTION_RE.search(prompt):
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid style prompt.",
+        )
+    return prompt
+
+# ── Upload constraints ─────────────────────────────────────────────────────────
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+
+# Magic bytes for each accepted MIME type
+_MAGIC: dict[str, list[bytes]] = {
+    "image/png":  [b"\x89PNG"],
+    "image/jpeg": [b"\xff\xd8\xff"],
+    "image/webp": [b"RIFF"],  # RIFF????WEBP — we check prefix + "WEBP" at offset 8
+}
+
+def _check_magic(data: bytes, content_type: str) -> bool:
+    """Returns True if data starts with the expected magic bytes for content_type."""
+    for magic in _MAGIC.get(content_type, []):
+        if data[:len(magic)] == magic:
+            # Extra check for WebP: bytes 8-12 must be b"WEBP"
+            if content_type == "image/webp":
+                return len(data) >= 12 and data[8:12] == b"WEBP"
+            return True
+    return False
 
 from app.services.groq_service import generate_nft_metadata
 from app.services.tripo_service import create_3d_task, wait_for_task
@@ -50,14 +91,29 @@ async def generate_nft(
     """
     Generates a 3D model using Tripo AI and metadata via Groq.
     """
+    # Sanitize style_prompt before passing to AI
+    style_prompt = _sanitize_prompt(style_prompt)
+
     if image.content_type not in ("image/png", "image/jpeg", "image/webp"):
         raise HTTPException(
             status_code=422,
             detail="Unsupported image format. Use PNG, JPEG, or WEBP.",
         )
 
-    # 1. Read Image Bytes
-    image_bytes = await image.read()
+    # 1. Read image bytes with hard size cap (prevents memory exhaustion)
+    image_bytes = await image.read(MAX_UPLOAD_BYTES + 1)
+    if len(image_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum allowed size is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
+        )
+
+    # Validate magic bytes (content_type header alone is attacker-controlled)
+    if not _check_magic(image_bytes, image.content_type):
+        raise HTTPException(
+            status_code=422,
+            detail="File content does not match the declared image type.",
+        )
 
     # 2. Start Tripo AI Task
     tripo_task_id = await create_3d_task(image_bytes, content_type=image.content_type)
